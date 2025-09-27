@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_library(Any STATIC src/any.c include/any.h)
 
-target_include_directories(Any PRIVATE include)
+target_include_directories(Any PUBLIC include)
 
 add_subdirectory(examples)
 add_subdirectory(tests)
