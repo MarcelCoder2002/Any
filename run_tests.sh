@@ -51,8 +51,16 @@ fi
 cd build
 
 # Configure and build
-print_status "INFO" "Configuring project with CMake..."
-if cmake .. > /dev/null 2>&1; then
+# Memory tracking toggle: set ANY_ENABLE_MEMORY_TRACKING=ON|OFF (default ON)
+TRACKING=${ANY_ENABLE_MEMORY_TRACKING:-ON}
+if [ "$TRACKING" = "ON" ]; then
+  print_status "INFO" "Configuring project with CMake (memory tracking ON)..."
+  CONFIG_CMD=(cmake -DANY_ENABLE_MEMORY_TRACKING=ON ..)
+else
+  print_status "INFO" "Configuring project with CMake (memory tracking OFF)..."
+  CONFIG_CMD=(cmake ..)
+fi
+if "${CONFIG_CMD[@]}" > /dev/null 2>&1; then
     print_status "PASS" "CMake configuration successful"
 else
     print_status "FAIL" "CMake configuration failed"
@@ -107,6 +115,18 @@ else
     echo "Compatibility test output:"
     ./tests/compatibility_test
     exit 1
+fi
+
+if [ "$TRACKING" = "ON" ]; then
+  echo ""
+  echo "🧪 Running leak demonstration (tracking only)..."
+  echo "=============================================="
+  # Run leak demo (expects a leak under tracking)
+  if ./tests/leak_demo > /dev/null 2>&1; then
+      print_status "PASS" "Leak demo behaved as expected"
+  else
+      print_status "WARN" "Leak demo did not behave as expected (tracking mismatch)"
+  fi
 fi
 
 echo ""

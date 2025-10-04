@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        tracking: [ON, OFF]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@v3.29.3
+
+      - name: Install build tools (Ubuntu only)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Configure and Build and Test
+        run: |
+          chmod +x run_tests.sh
+          export ANY_ENABLE_MEMORY_TRACKING=${{ matrix.tracking }}
+          ./run_tests.sh
+
+      - name: Summary
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Tracking: ${{ matrix.tracking }}"

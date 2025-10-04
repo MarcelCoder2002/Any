@@ -1,5 +1,8 @@
 # Any Library
 
+[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+
+
 A C library that implements a generic `Any` type similar to the `std::any` concept from C++.
 
 ## Features
@@ -24,6 +27,7 @@ make
 
 ```c
 #include "any.h"
+#include <stdio.h>
 
 int main() {
     // Creation and initialization
@@ -69,12 +73,11 @@ Any_Swap(a, b);
 // a now contains 20, b contains 10
 ```
 
-#### String Conversion
+#### Value Inspection
 ```c
 Any_DeclareAny(myVar, int, 42);
-char *str = Any_ToString(myVar);
-printf("Representation: %s\n", str);
-free(str); // Don't forget to free memory
+printf("Has value: %s\n", Any_HasValue(myVar) ? "yes" : "no");
+printf("Type: %llu, Size: %zu\n", (unsigned long long)Any_Type(myVar), Any_Size(myVar));
 ```
 
 #### Value Verification
@@ -99,11 +102,18 @@ if (Any_HasValue(myVar)) {
 - `Any_Declare(variable, typeID, type, value)`: Declaration and initialization
 - `Any_DeclareAny(variable, type, value)`: Declaration without typeID
 - `Any_GetValue(self, type)`: Typed retrieval
-- `Any_GetStringValue(self, type)`: String (char *) retrieval
-- `Any_GetWStringValue(self, type)`: WString (wchar_t *) retrieval
+- `Any_GetStringValue(self)`: String (char *) retrieval
+- `Any_GetWStringValue(self)`: WString (wchar_t *) retrieval
 - `Any_SetValue(self, type, value)`: Typed storage
 - `Any_SetStringValue(self, value)`: String storage
 - `Any_SetArrayValue(self, type, length, value)`: Array storage
+
+### Build Options
+
+- To enable memory tracking and leak reports, configure with:
+  ```bash
+  cmake -DANY_ENABLE_MEMORY_TRACKING=ON ..
+  ```
 
 ## Testing
 
@@ -169,13 +179,13 @@ See `examples/main.c` for a complete example demonstrating all features.
 ```c
 Any *Any_Create(TypeID type, size_t size);
 void Any_Destroy(Any *self);
-bool Any_Set(Any *self, TypeID type, const void *value, size_t size);
+Any *Any_Set(Any *self, TypeID type, const void *value, size_t size);
 const void *Any_Get(const Any *self);
 bool Any_Equals(const Any *self, const Any *other);
 bool Any_IsNull(const Any *self);
 bool Any_HasValue(const Any *self);
-size_t Any_GetSize(const Any *self);
-TypeID Any_GetType(const Any *self);
+size_t Any_Size(const Any *self);
+TypeID Any_Type(const Any *self);
 Any *Any_Copy(const Any *self);
 void Any_Move(Any *dest, Any *src);
 void Any_Swap(Any *self, Any *other);

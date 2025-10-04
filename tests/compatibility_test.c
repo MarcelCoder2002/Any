@@ -249,6 +249,17 @@ int main() {
     } else {
         printf("❌ %d compatibility test(s) failed.\n", result);
     }
-    
+    Any_MemoryReport();
+#ifdef ANY_TRACK_ALLOCATION_COUNT
+    {
+        const int leaks = Any_AllocationCount();
+        if (leaks != 0) {
+            printf("\n❌ Memory leak detected: %d allocation(s) left.\n", leaks);
+            return 1;
+        } else {
+            printf("\n✅ No memory leaks detected.\n");
+        }
+    }
+#endif
     return result;
 }

@@ -52,7 +52,7 @@ int stress_test_array_operations() {
     
     for (int i = 0; i < 1000; i++) {
         const size_t array_size = (i % MAX_ARRAY_SIZE) + 1;
-        int *test_array = malloc(array_size * sizeof(int));
+        int *test_array = Any_malloc(array_size * sizeof(int));
         STRESS_ASSERT(test_array != NULL, "Test array allocation should succeed");
         
         // Fill array with test data
@@ -64,7 +64,7 @@ int stress_test_array_operations() {
         Any *a = Any_Create(0, 0);
         Any_SetArrayValue(a, int, array_size, test_array);
         STRESS_ASSERT(Any_HasValue(a), "Any should have array value");
-        STRESS_ASSERT(Any_GetSize(a) == array_size * sizeof(int), "Array size should be correct");
+        STRESS_ASSERT(Any_Size(a) == array_size * sizeof(int), "Array size should be correct");
         
         // Verify data
         const int *retrieved = Any_GetArrayValue(a, int);
@@ -79,7 +79,7 @@ int stress_test_array_operations() {
         
         Any_Destroy(a);
         Any_Destroy(copy);
-        free(test_array);
+        Any_free(test_array);
         
         if (i % 100 == 0) {
             printf("   Processed array %d (size %zu)...\n", i, array_size);
@@ -108,7 +108,7 @@ int stress_test_string_operations() {
         Any *b = Any_Create(0, 0);
         Any_SetStringValueWithType(b, i % 1000, test_string);
         STRESS_ASSERT(Any_HasValue(b), "Any should have typed string value");
-        STRESS_ASSERT(Any_GetType(b) == i % 1000, "Type ID should be preserved");
+        STRESS_ASSERT(Any_Type(b) == i % 1000, "Type ID should be preserved");
         STRESS_ASSERT(strcmp(Any_GetStringValue(b), test_string) == 0, "Typed string should be preserved");
         
         // Test wide string
@@ -155,7 +155,7 @@ int stress_test_move_swap_operations() {
         Any_Move(dest, a);
         
         STRESS_ASSERT(Any_GetValue(dest, double) == val_b_before, "Move should preserve value");
-        STRESS_ASSERT(Any_IsNull(a), "Source should be null after move");
+        STRESS_ASSERT(Any_IsEmpty(a), "Source should be empty after move");
         
         Any_Destroy(a);
         Any_Destroy(b);
@@ -181,7 +181,7 @@ int stress_test_nested_arrays() {
         if (rows == 2 && cols == 2) {
             Any_DeclareLiteralNestedArray(matrix, int, [2][2], {{i, i+1}, {i+2, i+3}});
             STRESS_ASSERT(Any_HasValue(matrix), "Nested array should have value");
-            STRESS_ASSERT(Any_GetSize(matrix) == sizeof(int) * 2 * 2, "Nested array size should be correct");
+            STRESS_ASSERT(Any_Size(matrix) == sizeof(int) * 2 * 2, "Nested array size should be correct");
 
             const int (*arr)[2] = (int(*)[2])Any_GetArrayValue(matrix, int);
             STRESS_ASSERT(arr[0][0] == i, "Nested array[0][0] should be correct");
@@ -261,6 +261,17 @@ int main() {
     } else {
         printf("❌ %d stress test(s) failed.\n", result);
     }
-    
+    Any_MemoryReport();
+#ifdef ANY_TRACK_ALLOCATION_COUNT
+    {
+        const int leaks = Any_AllocationCount();
+        if (leaks != 0) {
+            printf("\n❌ Memory leak detected: %d allocation(s) left.\n", leaks);
+            return 1;
+        } else {
+            printf("\n✅ No memory leaks detected.\n");
+        }
+    }
+#endif
     return result;
 }

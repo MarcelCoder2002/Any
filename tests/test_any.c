@@ -68,7 +68,7 @@ int test_move() {
     Any_Move(dest, source);
     
     TEST_ASSERT(Any_GetValue(dest, double) == original_value, "Move preserves value");
-    TEST_ASSERT(Any_IsNull(source), "Source is null after move");
+    TEST_ASSERT(Any_IsEmpty(source), "Source is empty after move");
     TEST_ASSERT(Any_HasValue(dest), "Destination has value after move");
     
     Any_Destroy(source);
@@ -123,7 +123,7 @@ int test_array_operations() {
     Any_SetArrayValue(a, int, 3, arr);
     
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetArrayValue");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(int) * 3, "Array size is correct");
+    TEST_ASSERT(Any_Size(a) == sizeof(int) * 3, "Array size is correct");
 
     const int *retrieved_arr = Any_GetArrayValue(a, int);
     TEST_ASSERT(retrieved_arr != NULL, "GetArrayValue returns pointer");
@@ -143,7 +143,7 @@ int test_literal_array_operations() {
     Any_SetLiteralArrayValue(a, int, {1, 2, 3, 4, 5});
     
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetLiteralArrayValue");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(int) * 5, "Literal array size is correct");
+    TEST_ASSERT(Any_Size(a) == sizeof(int) * 5, "Literal array size is correct");
 
     const int *arr = Any_GetArrayValue(a, int);
     TEST_ASSERT(arr[0] == 1, "Literal array element 0 is correct");
@@ -164,7 +164,7 @@ int test_nested_array_operations() {
     Any_SetLiteralNestedArrayValue(a, int, [2][3], {{1, 2, 3}, {4, 5, 6}});
     
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetLiteralNestedArrayValue");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(int) * 2 * 3, "Nested array size is correct");
+    TEST_ASSERT(Any_Size(a) == sizeof(int) * 2 * 3, "Nested array size is correct");
 
     const int (*matrix)[3] = (int(*)[3])Any_GetArrayValue(a, int);
     TEST_ASSERT(matrix[0][0] == 1, "Matrix[0][0] is correct");
@@ -184,7 +184,7 @@ int test_declare_macros() {
     // Test Any_DeclareLiteralArray
     Any_DeclareLiteralArray(literal_array, double, {3.14, 2.71, 1.41});
     TEST_ASSERT(Any_HasValue(literal_array), "DeclareLiteralArray creates valid Any");
-    TEST_ASSERT(Any_GetSize(literal_array) == sizeof(double) * 3, "DeclareLiteralArray size is correct");
+    TEST_ASSERT(Any_Size(literal_array) == sizeof(double) * 3, "DeclareLiteralArray size is correct");
 
     const double *darr = Any_GetArrayValue(literal_array, double);
     TEST_ASSERT(darr[0] == 3.14, "DeclareLiteralArray element 0 is correct");
@@ -194,7 +194,7 @@ int test_declare_macros() {
     // Test Any_DeclareLiteralNestedArray
     Any_DeclareLiteralNestedArray(nested_array, float, [2][2], {{1.1f, 2.2f}, {3.3f, 4.4f}});
     TEST_ASSERT(Any_HasValue(nested_array), "DeclareLiteralNestedArray creates valid Any");
-    TEST_ASSERT(Any_GetSize(nested_array) == sizeof(float) * 2 * 2, "DeclareLiteralNestedArray size is correct");
+    TEST_ASSERT(Any_Size(nested_array) == sizeof(float) * 2 * 2, "DeclareLiteralNestedArray size is correct");
 
     const float (*fmatrix)[2] = (float(*)[2])Any_GetArrayValue(nested_array, float);
     TEST_ASSERT(fmatrix[0][0] == 1.1f, "DeclareLiteralNestedArray[0][0] is correct");
@@ -214,7 +214,7 @@ int test_string_with_type() {
     Any *a = Any_Create(0, 0);
     Any_SetStringValueWithType(a, 42, "Hello World");
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetStringValueWithType");
-    TEST_ASSERT(Any_GetType(a) == 42, "Type ID is preserved");
+    TEST_ASSERT(Any_Type(a) == 42, "Type ID is preserved");
     TEST_ASSERT(strcmp(Any_GetStringValue(a), "Hello World") == 0, "String value is correct");
     
     Any_Destroy(a);
@@ -235,7 +235,7 @@ int test_wide_string_operations() {
     Any *b = Any_Create(0, 0);
     Any_SetWStringValueWithType(b, 123, L"Typed Wide String");
     TEST_ASSERT(Any_HasValue(b), "Any has value after SetWStringValueWithType");
-    TEST_ASSERT(Any_GetType(b) == 123, "Wide string type ID is preserved");
+    TEST_ASSERT(Any_Type(b) == 123, "Wide string type ID is preserved");
     TEST_ASSERT(wcscmp(Any_GetWStringValue(b), L"Typed Wide String") == 0, "Typed wide string value is correct");
     
     Any_Destroy(a);
@@ -250,17 +250,17 @@ int test_any_set_return_value() {
     const int value = 42;
     
     // Test successful set
-    bool result = Any_Set(a, 0, &value, sizeof(int));
-    TEST_ASSERT(result, "Any_Set returns true on success");
+    Any *result = Any_Set(a, 0, &value, sizeof(int));
+    TEST_ASSERT(result != NULL, "Any_Set returns non-NULL on success");
     TEST_ASSERT(Any_HasValue(a), "Any has value after successful Set");
     
     // Test failure with NULL value
     result = Any_Set(a, 0, NULL, sizeof(int));
-    TEST_ASSERT(!result, "Any_Set returns false with NULL value");
+    TEST_ASSERT(result == NULL, "Any_Set returns NULL with NULL value");
     
     // Test failure with NULL Any
     result = Any_Set(NULL, 0, &value, sizeof(int));
-    TEST_ASSERT(!result, "Any_Set returns false with NULL Any");
+    TEST_ASSERT(result == NULL, "Any_Set returns NULL with NULL Any");
     
     Any_Destroy(a);
     return 0;
@@ -275,8 +275,8 @@ int test_array_with_type() {
     // Test Any_SetArrayValueWithType
     Any_SetArrayValueWithType(a, 999, int, 4, arr);
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetArrayValueWithType");
-    TEST_ASSERT(Any_GetType(a) == 999, "Array type ID is preserved");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(int) * 4, "Array size is correct");
+    TEST_ASSERT(Any_Type(a) == 999, "Array type ID is preserved");
+    TEST_ASSERT(Any_Size(a) == sizeof(int) * 4, "Array size is correct");
 
     const int *retrieved = Any_GetArrayValue(a, int);
     TEST_ASSERT(retrieved[0] == 100, "Array element 0 is correct");
@@ -296,8 +296,8 @@ int test_literal_array_with_type() {
     Any_SetLiteralArrayValueWithType(a, 777, char, {'A', 'B', 'C', 'D'});
     
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetLiteralArrayValueWithType");
-    TEST_ASSERT(Any_GetType(a) == 777, "Literal array type ID is preserved");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(char) * 4, "Literal array size is correct");
+    TEST_ASSERT(Any_Type(a) == 777, "Literal array type ID is preserved");
+    TEST_ASSERT(Any_Size(a) == sizeof(char) * 4, "Literal array size is correct");
 
     const char *chars = Any_GetArrayValue(a, char);
     TEST_ASSERT(chars[0] == 'A', "Literal array char 0 is correct");
@@ -317,8 +317,8 @@ int test_nested_array_with_type() {
     Any_SetLiteralNestedArrayValueWithType(a, 555, short, [3][2], {{1, 2}, {3, 4}, {5, 6}});
     
     TEST_ASSERT(Any_HasValue(a), "Any has value after SetLiteralNestedArrayValueWithType");
-    TEST_ASSERT(Any_GetType(a) == 555, "Nested array type ID is preserved");
-    TEST_ASSERT(Any_GetSize(a) == sizeof(short) * 3 * 2, "Nested array size is correct");
+    TEST_ASSERT(Any_Type(a) == 555, "Nested array type ID is preserved");
+    TEST_ASSERT(Any_Size(a) == sizeof(short) * 3 * 2, "Nested array size is correct");
 
     const short (*matrix)[2] = (short(*)[2])Any_GetArrayValue(a, short);
     TEST_ASSERT(matrix[0][0] == 1, "Nested array[0][0] is correct");
@@ -338,8 +338,8 @@ int test_declare_with_type() {
     // Test Any_DeclareLiteralArrayWithType
     Any_DeclareLiteralArrayWithType(literal_with_type, 333, long, {1000L, 2000L, 3000L});
     TEST_ASSERT(Any_HasValue(literal_with_type), "DeclareLiteralArrayWithType creates valid Any");
-    TEST_ASSERT(Any_GetType(literal_with_type) == 333, "DeclareLiteralArrayWithType type ID is preserved");
-    TEST_ASSERT(Any_GetSize(literal_with_type) == sizeof(long) * 3, "DeclareLiteralArrayWithType size is correct");
+    TEST_ASSERT(Any_Type(literal_with_type) == 333, "DeclareLiteralArrayWithType type ID is preserved");
+    TEST_ASSERT(Any_Size(literal_with_type) == sizeof(long) * 3, "DeclareLiteralArrayWithType size is correct");
 
     const long *longs = Any_GetArrayValue(literal_with_type, long);
     TEST_ASSERT(longs[0] == 1000L, "DeclareLiteralArrayWithType element 0 is correct");
@@ -349,8 +349,8 @@ int test_declare_with_type() {
     // Test Any_DeclareLiteralNestedArrayWithType
     Any_DeclareLiteralNestedArrayWithType(nested_with_type, 111, unsigned char, [2][4], {{1, 2, 3, 4}, {5, 6, 7, 8}});
     TEST_ASSERT(Any_HasValue(nested_with_type), "DeclareLiteralNestedArrayWithType creates valid Any");
-    TEST_ASSERT(Any_GetType(nested_with_type) == 111, "DeclareLiteralNestedArrayWithType type ID is preserved");
-    TEST_ASSERT(Any_GetSize(nested_with_type) == sizeof(unsigned char) * 2 * 4, "DeclareLiteralNestedArrayWithType size is correct");
+    TEST_ASSERT(Any_Type(nested_with_type) == 111, "DeclareLiteralNestedArrayWithType type ID is preserved");
+    TEST_ASSERT(Any_Size(nested_with_type) == sizeof(unsigned char) * 2 * 4, "DeclareLiteralNestedArrayWithType size is correct");
 
     const unsigned char (*ubmatrix)[4] = (unsigned char(*)[4])Any_GetArrayValue(nested_with_type, unsigned char);
     TEST_ASSERT(ubmatrix[0][0] == 1, "DeclareLiteralNestedArrayWithType[0][0] is correct");
@@ -394,6 +394,18 @@ int main() {
     } else {
         printf("❌ %d test(s) failed.\n", result);
     }
-    
+
+    Any_MemoryReport();
+#ifdef ANY_TRACK_ALLOCATION_COUNT
+    {
+        const int leaks = Any_AllocationCount();
+        if (leaks != 0) {
+            printf("\n❌ Memory leak detected: %d allocation(s) left.\n", leaks);
+            return 1;
+        } else {
+            printf("\n✅ No memory leaks detected.\n");
+        }
+    }
+#endif
     return result;
 }

@@ -70,5 +70,6 @@ int main(int argc, char *argv[]) {
     Any_Destroy(dest);
     
     printf("\n=== Tests completed ===\n");
+    Any_MemoryReport();
     return 0;
 }

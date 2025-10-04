@@ -388,6 +388,19 @@ typedef struct Any Any;
 extern const Any *const Any_null;
 
 /**
+ * @brief Initialize an existing Any object.
+ *
+ * This function initializes a user-defined (stack-allocated) Any object.
+ * The caller is responsible for managing the Any struct memory.
+ *
+ * @param self Pointer to an existing Any object to initialize.
+ * @param type Type identifier (optional, may be 0).
+ * @param size Size of the stored type in bytes.
+ * @return Pointer to the initialized Any, or NULL on failure.
+ */
+Any *Any_Init(Any *self, TypeID type, size_t size);
+
+/**
  * @brief Create a new Any object.
  *
  * @param type Type identifier (optional).
@@ -414,9 +427,21 @@ void Any_Reset(Any *self);
  * @param type  Type identifier (optional).
  * @param value Pointer to the data to copy.
  * @param size  Size of the data in bytes.
- * @return true on success and false otherwise
+ * @return Pointer to the Any on success, or NULL on failure.
  */
-bool Any_Set(Any *self, TypeID type, const void *value, size_t size);
+Any* Any_Set(Any *self, TypeID type, const void *value, size_t size);
+
+/**
+ * @brief Check if an Any object is logically empty.
+ *
+ * An Any is considered empty if it exists but currently has no stored value
+ * or its size is zero. Note: `Any_IsNull()` checks for unusable pointers,
+ * while `Any_IsEmpty()` checks the content state of a valid object.
+ *
+ * @param self Pointer to the Any object.
+ * @return true if empty, false otherwise.
+ */
+bool Any_IsEmpty(const Any *self);
 
 /**
  * @brief Get a pointer to the stored value.
@@ -434,7 +459,7 @@ const void *Any_Get(const Any *self);
  * @param self Pointer to the Any object.
  * @return Size in bytes, or 0 if empty.
  */
-size_t Any_GetSize(const Any *self);
+size_t Any_Size(const Any *self);
 
 /**
  * @brief Get the type identifier of the stored value.
@@ -442,7 +467,7 @@ size_t Any_GetSize(const Any *self);
  * @param self Pointer to the Any object.
  * @return TypeID, or 0 if unused.
  */
-TypeID Any_GetType(const Any *self);
+TypeID Any_Type(const Any *self);
 
 /**
  * @brief Compare two Any objects for equality.
@@ -509,5 +534,59 @@ void Any_Swap(Any *self, Any *other);
  * @param self Pointer to the Any object.
  */
 void Any_Destroy(Any *self);
+
+/**
+ * @brief Indicate if the Any instance was user-defined (stack-allocated).
+ *
+ * When true, the `Any` structure itself will not be freed by `Any_Destroy()`;
+ * only its internal buffer is released. When false, `Any_Destroy()` frees the
+ * entire object. This flag is set by `Any_Init()` and `Any_Create()`.
+ *
+ * @param self Pointer to the Any object.
+ * @return true if the object is user-defined, false otherwise.
+ */
+bool Any_IsUserDefined(const Any *self);
+
+#ifdef ANY_TRACK_ALLOCATION_COUNT
+
+/**
+ * @brief Wrapped allocation functions used by the Any library when
+ *        allocation tracking is enabled.
+ *
+ * These mirror the standard C allocation APIs but also maintain an internal
+ * allocation count for leak detection via `Any_MemoryReport()` and
+ * `Any_AllocationCount()`.
+ */
+void* Any_malloc(size_t size);
+void* Any_calloc(size_t num, size_t size);
+void* Any_realloc(void* old_ptr, size_t new_size);
+void Any_free(void* ptr);
+
+#else
+
+#define Any_calloc calloc
+#define Any_malloc malloc
+#define Any_realloc realloc
+#define Any_free free
+
+#endif //ANY_TRACK_ALLOCATION_COUNT
+
+/**
+ * @brief Print a summary of current Any allocations (for leak detection).
+ *
+ * When tracking is enabled (compile with `ANY_ENABLE_MEMORY_TRACKING=ON`),
+ * prints whether there are outstanding allocations. Otherwise, this is a
+ * no-op.
+ */
+void Any_MemoryReport(void);
+
+/**
+ * @brief Get the current count of outstanding Any allocations.
+ *
+ * Returns -1 when allocation tracking is disabled.
+ *
+ * @return Number of outstanding allocations, or -1 if unavailable.
+ */
+int Any_AllocationCount(void);
 
 #endif // ANY_H
